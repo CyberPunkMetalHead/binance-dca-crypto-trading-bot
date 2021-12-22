@@ -1,0 +1,12 @@
+---
+  TRADE_OPTIONS:
+    # In your pairing coin
+    QUANTITY: 15
+    # BTCUSDT will be bought for example
+    PAIRING: USDT
+    # HOW OFTEN SHOULD THE BOT DCA, IN DAYS
+    DCA_EVERY: 7
+    TEST: True
+  SEND_NOTIFICATIONS: True
+  EMAIL_ADDRESS: 'your@email.address'
+  EMAIL_PASSWORD: 'I'll let you figure out what this one is'
