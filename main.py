@@ -93,7 +93,7 @@ def main():
         avg_dca = calculate_avg_dca(all_prices)
         dca_history = plot_dca_history(all_prices, avg_dca)
 
-        time.sleep(frequency)
+        time.sleep(frequency*86400)
 
 
 if __name__ == '__main__':
