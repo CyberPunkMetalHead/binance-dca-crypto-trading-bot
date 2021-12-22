@@ -8,5 +8,5 @@
     DCA_EVERY: 7
     TEST: True
   SEND_NOTIFICATIONS: True
-  EMAIL_ADDRESS: 'your@email.address'
-  EMAIL_PASSWORD: 'I'll let you figure out what this one is'
+  EMAIL_ADDRESS: your@email.address
+  EMAIL_PASSWORD: your_pass
