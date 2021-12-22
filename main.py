@@ -12,13 +12,10 @@ import json
 import os.path
 
 
-#load coins to DCA
+# load coins to DCA
 coins_to_DCA = load_data('config/coins.yml')['COINS']
-
 # loads local configuration
 config = load_data('config/config.yml')
-
-
 
 
 def main():
@@ -49,7 +46,6 @@ def main():
             last_price = get_price(coin, pairing)
             volume = convert_volume(coin+pairing, qty, last_price)
 
-
             try:
                 # Run a test trade if true
                 if config['TRADE_OPTIONS']['TEST']:
@@ -79,8 +75,8 @@ def main():
 
             else:
                 logger.info(f"Order created with {volume} on {coin} at {datetime.now()}")
-
                 store_order('trades/order.json', order)
+
         message = f'DCA complete, bought {coins_to_DCA}. Waiting {frequency} days.'
         logger.info(message)
 
