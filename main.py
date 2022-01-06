@@ -37,59 +37,90 @@ def main():
         test_mode = config['TRADE_OPTIONS']['TEST']
         send_notification_flag = config['SEND_NOTIFICATIONS']
 
-        if not test_mode:
-            log.warning("RUNNING IN LIVE MODE! PAUSING FOR 1 MINUTE")
-            time.sleep(60)
 
-        # DCA each coin
-        for coin in coins_to_DCA:
-            last_price = get_price(coin, pairing)
-            volume = convert_volume(coin+pairing, qty, last_price)
+        if len(order) >0:
+        # check when last dca was executed
+            all_dates = get_all_order_dates(order)
+            max_time_by_coin = calculate_max_time(all_dates)
+            max_time = max(max_time_by_coin.values())
+        else:
+            max_time=0
 
-            try:
-                # Run a test trade if true
-                if config['TRADE_OPTIONS']['TEST']:
-                    if coin not in order:
-                        order[coin] = {}
-                        order[coin]["orders"] = []
 
-                    order[coin]["orders"].append({
-                                'symbol':coin+pairing,
-                                'price':last_price,
-                                'volume':volume,
-                                'time':datetime.timestamp(datetime.now())
-                                })
+        # check if configured DCA period has passed, prevents double order if script needs restarting
 
-                    logger.info('PLACING TEST ORDER')
+        if (datetime.timestamp(datetime.now()) > max_time + frequency*86400):
+        
+            if not test_mode:
+                logger.warning("RUNNING IN LIVE MODE! PAUSING FOR 1 MINUTE")
+                time.sleep(60)
 
-                # place a live order if False
-                else:
-                    if coin not in order:
-                        order[coin] = {}
-                        order[coin]["orders"] = []
+            # DCA each coin
+            for coin in coins_to_DCA:
+                last_price = get_price(coin, pairing)
+                volume = convert_volume(coin+pairing, qty, last_price)
+                try:
+                    # Run a test trade if true
+                    if config['TRADE_OPTIONS']['TEST']:
+                        if coin not in order:
+                            order[coin] = {}
+                            order[coin]["orders"] = []
+                        logger.info('PLACING TEST ORDER')
+                        if create_test_order(coin+pairing, volume, 'BUY') == 'Success':
+                            order[coin]["orders"].append({
+                                    'symbol':coin+pairing,
+                                    'price':last_price,
+                                    'volume':volume,
+                                    'time':datetime.timestamp(datetime.now())
+                                    })
+                            logger.info(f"Order created with {volume} on {coin} at {datetime.now()}")
+                            store_order('trades/order.json', order)
+                        else:
+                            logger.info(f'TEST ORDER FOR {volume} OF {coin} FAILED')
 
-                    order[coin]["orders"] = create_order(coin+pairing, volume, 'BUY')
+                        
 
-            except Exception as e:
-                logger.info(e)
+                    # place a live order if False
+                    else:
+                        if coin not in order:
+                            order[coin] = {}
+                            order[coin]["orders"] = []
 
-            else:
-                logger.info(f"Order created with {volume} on {coin} at {datetime.now()}")
-                store_order('trades/order.json', order)
+                        if create_market_order(coin+pairing, volume) == 'Success':
+                            order[coin]["orders"].append({
+                                    'symbol':coin+pairing,
+                                    'price':last_price,
+                                    'volume':volume,
+                                    'time':datetime.timestamp(datetime.now())
+                                    })  
+                            logger.info(f"Order created with {volume} on {coin} at {datetime.now()}")
+                            store_order('trades/order.json', order)
+                        else:
+                            logger.info(f'ORDER FOR {volume} OF {coin} FAILED')                                
 
-        message = f'DCA complete, bought {coins_to_DCA}. Waiting {frequency} days.'
-        logger.info(message)
+                except Exception as e:
+                    logger.info(e)
 
-        # sends an e-mail if enabled.
-        if send_notification_flag:
-            send_notification(message)
+            message = f'DCA complete, attempted to buy {coins_to_DCA}. Waiting {frequency} days.'
+            logger.info(message)
 
-        # report on DCA performance. Files saved in trades/dca-tracker
-        all_prices = get_all_order_prices(order)
-        avg_dca = calculate_avg_dca(all_prices)
-        dca_history = plot_dca_history(all_prices, avg_dca)
+            # sends an e-mail if enabled.
+            if send_notification_flag:
+                send_notification(message)
 
-        time.sleep(frequency*86400)
+            # report on DCA performance. Files saved in trades/dca-tracker
+            all_prices = get_all_order_prices(order)
+            avg_dca = calculate_avg_dca(all_prices)
+            dca_history = plot_dca_history(all_prices, avg_dca)
+        else: 
+            hours_since_DCA = round((datetime.timestamp(datetime.now()) - max_time)/3600, 1)
+            hours_to_next_dca = (frequency*24)-hours_since_DCA
+            logger.info(f'{hours_since_DCA} Hours since last DCA. Bot still running. Next purchase in approximately {hours_to_next_dca} hours.')
+       
+        #check every 15 mins or defined freq, whichever is less
+
+        sleep_time = min(900, frequency*86400)
+        time.sleep(sleep_time)
 
 
 if __name__ == '__main__':

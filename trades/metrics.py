@@ -18,6 +18,19 @@ def get_all_order_prices(order):
     return coin_stats
 
 
+def get_all_order_dates(order):
+    """
+    Takes a dict of all orders and organises the last_price
+    """
+    coin_stats = {}
+    for coin in order:
+        coin_stats[coin] = []
+        for item in order[coin]['orders']:
+            coin_stats[coin].append(float(item['time']))
+
+    return coin_stats
+
+
 def calculate_avg_dca(data):
     """
     Takes a dict of lists cotaining last prices for each coin DCad
@@ -29,6 +42,18 @@ def calculate_avg_dca(data):
         avg_dca[coin] = np.average(avg_dca[coin])
 
     return avg_dca
+
+def calculate_max_time(data):
+    """
+    Takes a dict of lists cotaining last time for each coin DCad
+    And calculates the max DCA time for each coin
+    """
+    max_dca_time = {}
+    for coin in data:
+        max_dca_time[coin] = np.array(data[coin])
+        max_dca_time[coin] = np.amax(max_dca_time[coin])
+
+    return max_dca_time
 
 
 def plot_dca_history(data, average):

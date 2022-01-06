@@ -1,5 +1,5 @@
 from system.logger import logger
-
+from math import ceil
 from auth.binance_auth import *
 from binance.enums import *
 
@@ -20,35 +20,54 @@ def convert_volume(coin, quantity, last_price):
         if lot_size[coin] < 0:
             lot_size[coin] = 0
 
-    except exception as e:
+    except BinanceAPIException as e:
         logger.debug(f'Converted {quantity} {coin} by setting lot size to 0')
         lot_size = {coin:0}
 
-    # calculate the volume in coin from QUANTITY in USDT (default)
-    volume = float(quantity / float(last_price))
+    # calculate the raw volume in coin from QUANTITY in USDT (default)
+    volume_raw = float(quantity / float(last_price))
 
-    # define the volume with the correct step size
+    # define the volume with the correct step size. Always rounding up to ensure minimum purchase quantities
+    
     if coin not in lot_size:
-        volume = float('{:.1f}'.format(volume))
+        volume = float('{:.1f}'.format(volume_raw))
 
     else:
-        # if lot size has 0 decimal points, make the volume an integer
-        if lot_size[coin] == 0:
-            volume = int(volume)
-        else:
-            volume = float('{:.{}f}'.format(volume, lot_size[coin]))
+        volume = volume_raw + float(step_size) - (volume_raw%float(step_size))
 
     logger.debug(f'Sucessfully converted {quantity} {coin} to {volume} in trading coin')
     return volume
 
 
-def create_order(coin, amount, action):
+def create_test_order(coin, amount, action):
     """
     Creates simple buy order and returns the order
     """
-    return client.create_margin_order(
+    try:
+        client.create_margin_order(
         symbol = coin,
         side = action,
         type = 'MARKET',
-        quantity = amount
-    )
+        quantity = amount)
+        result="Success"
+    except BinanceAPIException as be:
+        result="Failed"
+        logger.warning(f'{be.status_code} {be.message}')
+    return result
+
+
+
+
+def create_market_order(coin, amount):
+    """
+    Creates limit order and returns the details
+    """
+    try:
+        client.order_market_buy(
+        symbol = coin,
+        quantity = amount)
+        result="Success"
+    except BinanceAPIException as be:
+        result="Failed"
+        logger.warning(f'{be.status_code} {be.message}')
+    return result
