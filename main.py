@@ -38,7 +38,7 @@ def main():
         send_notification_flag = config['SEND_NOTIFICATIONS']
 
         if not test_mode:
-            log.warning("RUNNING IN LIVE MODE! PAUSING FOR 1 MINUTE")
+            logger.warning("RUNNING IN LIVE MODE! PAUSING FOR 1 MINUTE")
             time.sleep(60)
 
         # DCA each coin
