@@ -68,7 +68,7 @@ def main():
                         order[coin] = {}
                         order[coin]["orders"] = []
 
-                    order[coin]["orders"] = create_order(coin+pairing, volume, 'BUY')
+                    order[coin]["orders"] = create_order(coin+pairing, volume)
 
             except Exception as e:
                 logger.info(e)
